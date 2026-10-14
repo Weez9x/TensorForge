@@ -1,0 +1,7 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+BreakBeforeBraces: Allman
+IndentAccessModifiers: true
+EmptyLineBeforeAccessModifier: Always
+EmptyLineAfterAccessModifier: Always
+AllowShortFunctionsOnASingleLine: None
