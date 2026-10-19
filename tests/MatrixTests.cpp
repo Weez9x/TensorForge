@@ -43,6 +43,16 @@ void TestMatMultipli()
     Require(result(0, 1) == 64.0f, "Wrong result(0, 1)");
     Require(result(1, 0) == 139.0f, "Wrong result(1, 0)");
     Require(result(1, 1) == 154.0f, "Wrong result(1, 1)");
+
+    Matrix resultIKJ = MatMulIKJ(a, b);
+
+    Require(resultIKJ.Rows() == 2, "Wrong row count IKJ");
+    Require(resultIKJ.Cols() == 2, "Wrong column count IKJ");
+
+    Require(resultIKJ(0, 0) == 58.0f, "Wrong result(0, 0) IKJ");
+    Require(resultIKJ(0, 1) == 64.0f, "Wrong result(0, 1) IKJ");
+    Require(resultIKJ(1, 0) == 139.0f, "Wrong result(1, 0) IKJ");
+    Require(resultIKJ(1, 1) == 154.0f, "Wrong result(1, 1) IKJ");
 }
 
 void TestIncompatibleDimensions()
@@ -63,6 +73,18 @@ void TestIncompatibleDimensions()
 
     Require(exceptionThrown,
             "Expected invalid_argument for incompatible dimensions");
+
+    try
+    {
+        MatMulIKJ(c, d);
+    }
+    catch (const std::invalid_argument &)
+    {
+        exceptionThrown = true;
+    }
+
+    Require(exceptionThrown,
+            "IKJ Expected invalid_argument for incompatible dimensions");
 }
 
 void TestMultiplyByIdentity()
@@ -93,6 +115,19 @@ void TestMultiplyByIdentity()
         for (std::size_t j = 0; j < a.Cols(); j++)
         {
             Require(a(i, j) == result(i, j), "Wrong result");
+        }
+    }
+
+    Matrix resultIKJ = MatMultipli(a, identity);
+
+    Require(resultIKJ.Rows() == a.Rows(), "Wrong row count IKJ");
+    Require(resultIKJ.Cols() == a.Cols(), "Wrong column count IKJ");
+
+    for (std::size_t i = 0; i < a.Rows(); i++)
+    {
+        for (std::size_t j = 0; j < a.Cols(); j++)
+        {
+            Require(a(i, j) == result(i, j), "Wrong result IKJ");
         }
     }
 }

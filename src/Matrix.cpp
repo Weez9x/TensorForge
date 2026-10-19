@@ -49,6 +49,26 @@ Matrix MatMultipli(const Matrix &a, const Matrix &b)
     return result;
 }
 
+Matrix MatMulIKJ(const Matrix &a, const Matrix &b)
+{
+    if (a.Cols() != b.Rows())
+    {
+        throw std::invalid_argument("Cols A != Rows B");
+    }
+    Matrix result(a.Rows(), b.Cols());
+    for (std::size_t i = 0; i < a.Rows(); i++)
+    {
+        for (std::size_t k = 0; k < a.Cols(); k++)
+        {
+            for (std::size_t j = 0; j < b.Cols(); j++)
+            {
+                result(i, j) += a(i, k) * b(k, j);
+            }
+        }
+    }
+    return result;
+}
+
 std::size_t Matrix::Rows() const
 {
     return rows_;

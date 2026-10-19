@@ -23,3 +23,4 @@ class Matrix
 };
 
 Matrix MatMultipli(const Matrix &a, const Matrix &b);
+Matrix MatMulIKJ(const Matrix &a, const Matrix &b);
