@@ -24,3 +24,4 @@ class Matrix
 
 Matrix MatMultipli(const Matrix &a, const Matrix &b);
 Matrix MatMulIKJ(const Matrix &a, const Matrix &b);
+Matrix MatMulBlocked(const Matrix &a, const Matrix &b, std::size_t blockSize);

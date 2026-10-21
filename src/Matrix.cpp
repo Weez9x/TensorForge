@@ -1,4 +1,5 @@
 #include <Matrix.h>
+#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <limits>
@@ -63,6 +64,44 @@ Matrix MatMulIKJ(const Matrix &a, const Matrix &b)
             for (std::size_t j = 0; j < b.Cols(); j++)
             {
                 result(i, j) += a(i, k) * b(k, j);
+            }
+        }
+    }
+    return result;
+}
+
+Matrix MatMulBlocked(const Matrix &a, const Matrix &b, std::size_t blockSize)
+{
+    if (a.Cols() != b.Rows())
+    {
+        throw std::invalid_argument("Cols A != Rows B");
+    }
+    if (blockSize == 0)
+    {
+        throw std::invalid_argument("blockSize = 0");
+    }
+
+    Matrix result(a.Rows(), b.Cols());
+    for (std::size_t i0 = 0; i0 < a.Rows(); i0 += blockSize)
+    {
+        const std::size_t iEnd = i0 + std::min(blockSize, a.Rows() - i0);
+        for (std::size_t k0 = 0; k0 < a.Cols(); k0 += blockSize)
+        {
+            const std::size_t kEnd = k0 + std::min(blockSize, a.Cols() - k0);
+            for (std::size_t j0 = 0; j0 < b.Cols(); j0 += blockSize)
+            {
+                const std::size_t jEnd =
+                    j0 + std::min(blockSize, b.Cols() - j0);
+                for (std::size_t i = i0; i < iEnd; ++i)
+                {
+                    for (std::size_t k = k0; k < kEnd; ++k)
+                    {
+                        for (std::size_t j = j0; j < jEnd; ++j)
+                        {
+                            result(i, j) += a(i, k) * b(k, j);
+                        }
+                    }
+                }
             }
         }
     }
