@@ -30,3 +30,4 @@ CMakeUserPresets.json
 # Файлы операционной системы
 .DS_Store
 Thumbs.db
+NetrwTreeListing
