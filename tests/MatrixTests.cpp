@@ -64,6 +64,16 @@ void TestMatMultipli()
     Require(resultBlocked(0, 1) == 64.0f, "Wrong result(0, 1) Blocked");
     Require(resultBlocked(1, 0) == 139.0f, "Wrong result(1, 0) Blocked");
     Require(resultBlocked(1, 1) == 154.0f, "Wrong result(1, 1) Blocked");
+
+    Matrix resultParallel = MatMulIKJParallel(a, b, 2);
+
+    Require(resultParallel.Rows() == 2, "Wrong row count Parallel");
+    Require(resultParallel.Cols() == 2, "Wrong column count Parallel");
+
+    Require(resultParallel(0, 0) == 58.0f, "Wrong result(0, 0) Parallel");
+    Require(resultParallel(0, 1) == 64.0f, "Wrong result(0, 1) Parallel");
+    Require(resultParallel(1, 0) == 139.0f, "Wrong result(1, 0) Parallel");
+    Require(resultParallel(1, 1) == 154.0f, "Wrong result(1, 1) Parallel");
 }
 
 void TestIncompatibleDimensions()
@@ -110,6 +120,19 @@ void TestIncompatibleDimensions()
 
     Require(exceptionThrown,
             "Blocked Expected invalid_argument for incompatible dimensions");
+
+    exceptionThrown = false;
+    try
+    {
+        MatMulIKJParallel(c, d, 2);
+    }
+    catch (const std::invalid_argument &)
+    {
+        exceptionThrown = true;
+    }
+
+    Require(exceptionThrown,
+            "Parallel Expected invalid_argument for incompatible dimensions");
 }
 
 void TestMultiplyByIdentity()
@@ -165,7 +188,19 @@ void TestMultiplyByIdentity()
     {
         for (std::size_t j = 0; j < a.Cols(); j++)
         {
-            Require(a(i, j) == resultBlocked(i, j), "Wrong result IKJ");
+            Require(a(i, j) == resultBlocked(i, j), "Wrong result Blocked");
+        }
+    }
+    Matrix resultParallel = MatMulIKJParallel(a, identity, 2);
+
+    Require(resultParallel.Rows() == a.Rows(), "Wrong row count Parallel");
+    Require(resultParallel.Cols() == a.Cols(), "Wrong column count Parallel");
+
+    for (std::size_t i = 0; i < a.Rows(); i++)
+    {
+        for (std::size_t j = 0; j < a.Cols(); j++)
+        {
+            Require(a(i, j) == resultParallel(i, j), "Wrong result Parallel");
         }
     }
 }
@@ -248,6 +283,73 @@ void TestBlockedMatchesIJK()
     }
 }
 
+void TestIJKParallel()
+{
+    Matrix a(67, 79);
+    Matrix b(79, 53);
+
+    for (std::size_t i = 0; i < a.Rows(); i++)
+    {
+        for (std::size_t j = 0; j < a.Cols(); j++)
+        {
+            a(i, j) = i + j;
+        }
+    }
+
+    for (std::size_t i = 0; i < b.Rows(); i++)
+    {
+        for (std::size_t j = 0; j < b.Cols(); j++)
+        {
+            b(i, j) = i + j;
+        }
+    }
+
+    Matrix result = MatMultipli(a, b);
+    Matrix resultParallel1 = MatMulIKJParallel(a, b, 1);
+    Require(resultParallel1.Rows() == a.Rows(), "wrong resultParallel1.Rows()");
+    Require(resultParallel1.Cols() == b.Cols(), "wrongresultParallel1.Cols()");
+    for (std::size_t i = 0; i < a.Rows(); i++)
+    {
+        for (std::size_t j = 0; j < b.Cols(); j++)
+        {
+            Require(std::fabs(resultParallel1(i, j) - result(i, j)) < 1e-4f,
+                    "IKJParallel1 result differs from IJK");
+        }
+    }
+    Matrix resultParallel2 = MatMulIKJParallel(a, b, 2);
+    Require(resultParallel2.Rows() == a.Rows(), "wrong resultParallel2.Rows()");
+    Require(resultParallel2.Cols() == b.Cols(), "wrong resultParallel2.Cols()");
+    for (std::size_t i = 0; i < a.Rows(); i++)
+    {
+        for (std::size_t j = 0; j < b.Cols(); j++)
+        {
+            Require(std::fabs(resultParallel2(i, j) - result(i, j)) < 1e-4f,
+                    "IKJParallel2 result differs from IJK");
+        }
+    }
+    Matrix resultParallel4 = MatMulIKJParallel(a, b, 4);
+    Require(resultParallel4.Rows() == a.Rows(), "wrong resultParallel4.Rows()");
+    Require(resultParallel4.Cols() == b.Cols(), "wrong resultParallel4.Cols()");
+    for (std::size_t i = 0; i < a.Rows(); i++)
+    {
+        for (std::size_t j = 0; j < b.Cols(); j++)
+        {
+            Require(std::fabs(resultParallel4(i, j) - result(i, j)) < 1e-4f,
+                    "IKJParallel4 result differs from IJK");
+        }
+    }
+    Matrix resultParallel8 = MatMulIKJParallel(a, b, 8);
+    Require(resultParallel8.Rows() == a.Rows(), "wrong resultParallel8.Rows()");
+    Require(resultParallel8.Cols() == b.Cols(), "wrong resultParallel8.Cols()");
+    for (std::size_t i = 0; i < a.Rows(); i++)
+    {
+        for (std::size_t j = 0; j < b.Cols(); j++)
+        {
+            Require(std::fabs(resultParallel8(i, j) - result(i, j)) < 1e-4f,
+                    "IKJParallel8 result differs from IJK");
+        }
+    }
+}
 void TestBlockedZeroBlockSize()
 {
     Matrix a(2, 3);
@@ -266,6 +368,24 @@ void TestBlockedZeroBlockSize()
 
     Require(exceptionThrown, "Expected invalid_argument for zero block size");
 }
+void TestIKJZeroThreads()
+{
+    Matrix a(2, 3);
+    Matrix b(3, 2);
+
+    bool exceptionThrown = false;
+
+    try
+    {
+        MatMulIKJParallel(a, b, 0);
+    }
+    catch (const std::invalid_argument &)
+    {
+        exceptionThrown = true;
+    }
+
+    Require(exceptionThrown, "Expected invalid_argument for zero threads");
+}
 
 int main()
 {
@@ -276,6 +396,8 @@ int main()
         TestMultiplyByIdentity();
         TestBlockedMatchesIJK();
         TestBlockedZeroBlockSize();
+        TestIJKParallel();
+        TestIKJZeroThreads();
         std::cout << "All tests passed\n";
         return 0;
     }

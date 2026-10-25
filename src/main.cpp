@@ -77,5 +77,16 @@ int main()
         std::cout << std::endl;
     }
 
+    Matrix threadMul = MatMulIKJParallel(aM, bM, 2);
+    std::cout << "MULthread: " << std::endl;
+    for (std::size_t i = 0; i < threadMul.Rows(); i++)
+    {
+        for (std::size_t j = 0; j < threadMul.Cols(); j++)
+        {
+            std::cout << threadMul(i, j) << " ";
+        }
+        std::cout << std::endl;
+    }
+
     return 0;
 }

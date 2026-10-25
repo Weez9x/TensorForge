@@ -4,6 +4,8 @@
 #include <cstddef>
 #include <limits>
 #include <stdexcept>
+#include <thread>
+#include <vector>
 
 Matrix::Matrix() : rows_(0), cols_(0)
 {
@@ -103,6 +105,48 @@ Matrix MatMulBlocked(const Matrix &a, const Matrix &b, std::size_t blockSize)
                     }
                 }
             }
+        }
+    }
+    return result;
+}
+
+Matrix MatMulIKJParallel(const Matrix &a, const Matrix &b,
+                         std::size_t threadCount)
+{
+    if (a.Cols() != b.Rows())
+    {
+        throw std::invalid_argument("Cols A != Rows B");
+    }
+    if (threadCount == 0)
+    {
+        throw std::invalid_argument("threadCount = 0");
+    }
+    Matrix result(a.Rows(), b.Cols());
+    std::vector<std::thread> threads;
+    for (std::size_t t = 0; t < threadCount; t++)
+    {
+        const std::size_t threadStart = (t * a.Rows() / threadCount);
+        const std::size_t threadEnd = ((t + 1) * a.Rows() / threadCount);
+        threads.emplace_back(
+            [&a, &b, &result, threadStart, threadEnd]()
+            {
+                for (std::size_t i = threadStart; i < threadEnd; i++)
+                {
+                    for (std::size_t k = 0; k < a.Cols(); k++)
+                    {
+                        for (std::size_t j = 0; j < b.Cols(); j++)
+                        {
+                            result(i, j) += a(i, k) * b(k, j);
+                        }
+                    }
+                }
+            });
+    }
+    for (auto &th : threads)
+    {
+        if (th.joinable())
+        {
+            th.join();
         }
     }
     return result;
